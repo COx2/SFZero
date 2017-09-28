@@ -3,6 +3,8 @@
 
 #include <math.h>
 
+#include "SFZDebug.h"
+
 namespace SFZero {
 
 class SFZSample;
@@ -39,14 +41,21 @@ class SFZRegion {
 		void	addForSF2(SFZRegion* other);
 		void	sf2ToSFZ();
 		void	dump();
+		void 	incrementSeqCount();
 
-		bool	matches(unsigned char note, unsigned char velocity, Trigger _trigger) {
-			return
+		bool	matches(unsigned char note, unsigned char velocity, Trigger _trigger, bool use_seq_count = false) {
+			bool match =
 				note >= lokey && note <= hikey &&
 				velocity >= lovel && velocity <= hivel &&
 				(_trigger == trigger ||
 				 (trigger == attack && (_trigger == first || _trigger == legato)));
-			}
+
+			if (match && use_seq_count) {
+				if (seq_count != seq_position) match = false;
+				incrementSeqCount();
+				}
+			return match;
+		}
 
 		SFZSample* sample;
 		unsigned char lokey, hikey;
@@ -64,6 +73,7 @@ class SFZRegion {
 		int tune;
 		int pitch_keycenter, pitch_keytrack;
 		int bend_up, bend_down;
+		int seq_length, seq_position;
 
 		float volume, pan;
 		float amp_veltrack;
@@ -79,6 +89,9 @@ class SFZRegion {
 		static inline double timecents2Secs(double timecents) { return pow(2.0, timecents / 1200.0); }
 		static inline float timecents2Secs(float timecents) { return powf(2.0f, timecents / 1200.0f); }
 		static inline float cents2Hertz(float cents) { return 8.176f * powf(2.0f, cents / 1200.0f); }
+	
+	private:
+		int seq_count;
 	};
 
 }

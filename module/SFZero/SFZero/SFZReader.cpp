@@ -230,6 +230,10 @@ void SFZReader::read(const char* text, unsigned int length)
 						buildingRegion->loop_start = (unsigned long) value.getLargeIntValue();
 					else if (opcode == "loop_end" || opcode == "loopend")
 						buildingRegion->loop_end = (unsigned long) value.getLargeIntValue();
+					else if (opcode == "seq_length")
+						buildingRegion->seq_length = value.getIntValue();
+					else if (opcode == "seq_position")
+						buildingRegion->seq_position = value.getIntValue();
 					else if (opcode == "transpose")
 						buildingRegion->transpose = value.getIntValue();
 					else if (opcode == "tune")

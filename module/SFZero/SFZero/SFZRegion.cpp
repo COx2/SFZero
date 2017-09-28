@@ -68,6 +68,9 @@ void SFZRegion::clear()
 	ampeg_veltrack.clearMod();
 	modeg.clear();
 	initialFilterFc = 0x7FFF;
+	seq_length = 1;
+	seq_position = 1;
+	seq_count = 1; // seq_count counts from 1 <= seq_length
 }
 
 
@@ -170,6 +173,10 @@ void SFZRegion::sf2ToSFZ()
 		initialFilterQ = 0;
 }
 
+void SFZRegion::incrementSeqCount()
+{
+	seq_count = (seq_count % seq_length) + 1;
+}
 
 void SFZRegion::dump()
 {
