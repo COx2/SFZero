@@ -33,7 +33,10 @@ class SFZRegion {
 			fast, normal
 			};
 
-
+		enum FilterType {
+			lpf_1p, hpf_1p, lpf_2p, hpf_2p, bpf_2p, brf_2p, no_filter
+			};
+	
 		SFZRegion();
 		void	clear();
 		void	clearForSF2();
@@ -85,6 +88,7 @@ class SFZRegion {
 		int freqModLFO, modLfoToPitch, modLfoToFilterFc, modLfoToVolume;
 		float delayVibLFO;
 		int freqVibLFO, vibLfoToPitch;
+		FilterType fil_type;
 
 		static inline double timecents2Secs(double timecents) { return pow(2.0, timecents / 1200.0); }
 		static inline float timecents2Secs(float timecents) { return powf(2.0f, timecents / 1200.0f); }

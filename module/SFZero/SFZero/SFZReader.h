@@ -26,6 +26,8 @@ class SFZReader {
 		int 	keyValue(const String& str);
 		int 	triggerValue(const String& str);
 		int 	loopModeValue(const String& str);
+		int 	filterTypeValue(const String& str);
+
 		void	finishRegion(SFZRegion* region);
 		void	error(const String& message);
 	};

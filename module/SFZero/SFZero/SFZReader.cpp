@@ -278,6 +278,28 @@ void SFZReader::read(const char* text, unsigned int length)
 						buildingRegion->ampeg_veltrack.sustain = value.getFloatValue();
 					else if (opcode == "ampeg_vel2release")
 						buildingRegion->ampeg_veltrack.release = value.getFloatValue();
+					else if (opcode == "fil_type")
+						buildingRegion->fil_type = static_cast<SFZRegion::FilterType>(filterTypeValue(value));
+					else if (opcode == "cutoff")
+						buildingRegion->initialFilterFc = value.getIntValue();
+					else if (opcode == "fileg_depth")
+						buildingRegion->modEnvToFilterFc = value.getIntValue();
+					else if (opcode == "resonance")
+						buildingRegion->initialFilterQ = value.getIntValue();
+					else if (opcode == "fileg_delay")
+						buildingRegion->modeg.delay = value.getFloatValue();
+					else if (opcode == "fileg_start")
+						buildingRegion->modeg.start = value.getFloatValue();
+					else if (opcode == "fileg_attack")
+						buildingRegion->modeg.attack = value.getFloatValue();
+					else if (opcode == "fileg_decay")
+						buildingRegion->modeg.decay = value.getFloatValue();
+					else if (opcode == "fileg_sustain")
+						buildingRegion->modeg.sustain = value.getFloatValue();
+					else if (opcode == "fileg_hold")
+						buildingRegion->modeg.hold = value.getFloatValue();
+					else if (opcode == "fileg_release")
+						buildingRegion->modeg.release = value.getFloatValue();
 					else if (opcode == "default_path")
 						error("\"default_path\" outside of <control> tag");
 					else
@@ -416,6 +438,22 @@ int SFZReader::loopModeValue(const String& str)
 	return SFZRegion::sample_loop;
 }
 
+int SFZReader::filterTypeValue(const String& str)
+{
+	if (str == "lpf_1p")
+		return SFZRegion::lpf_1p;
+	if (str == "hpf_1p")
+		return SFZRegion::hpf_1p;
+	if (str == "lpf_2p")
+		return SFZRegion::lpf_2p;
+	if (str == "hpf_2p")
+		return SFZRegion::hpf_2p;
+	if (str == "bpf_2p")
+		return SFZRegion::bpf_2p;
+	if (str == "brf_2p")
+		return SFZRegion::brf_2p;
+	return SFZRegion::no_filter;
+}
 
 void SFZReader::finishRegion(SFZRegion* region)
 {
