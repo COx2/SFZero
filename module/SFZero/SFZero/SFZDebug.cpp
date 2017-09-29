@@ -118,6 +118,12 @@ void SFZero::setupLogging(Logger* logger)
 	Logger::setCurrentLogger(logger);
 }
 
+void SFZero::destroyLogging()
+{
+	Logger::setCurrentLogger(nullptr);
+	fifo = nullptr;
+}
+
 
 void SFZero::fifoLogMessage(const String& message)
 {

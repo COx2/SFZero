@@ -38,6 +38,7 @@ class LogFifo {
 	};
 
 extern void setupLogging(juce::Logger* logger);
+extern void destroyLogging();
 extern void fifoLogMessage(const juce::String& message);
 extern void relayFifoLogMessages();
 
