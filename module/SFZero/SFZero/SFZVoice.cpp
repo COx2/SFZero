@@ -62,7 +62,7 @@ SFZVoice::SFZVoice()
 	ampeg.setExponentialDecay(true);
 	modeg.setExponentialDecay(false);
     
-    filter.state = new StateVariableFilter::Parameters<float>;
+    filter.state = new juce::dsp::StateVariableFilter::Parameters<float>;
     filter.prepare ({ 44100, (uint32) SFZVOICE_RENDER_EFFECTSAMPLEBLOCK, 2 });
 }
 
@@ -162,8 +162,9 @@ void SFZVoice::startNote(
 //    lowpass.active = (region->initialFilterFc <= 13500);
 //    if (lowpass.active) lowpass.setup(SFZRegion::cents2Hertz((float)region->initialFilterFc) / getSampleRate());
     
-    filter.state->type = Type::lowPass;
-    filter.state->setCutOffFrequency (sampleRate, cutoff, resonance);
+    filter.state->type = juce::dsp::StateVariableFilter::Parameters<float>::Type::lowPass;
+    filter.state->setCutOffFrequency (44100, 500, 0.7);
+    
 
 	// Setup LFO filters.
 	modlfo.setup(region->delayModLFO, region->freqModLFO, getSampleRate());
@@ -254,7 +255,7 @@ void SFZVoice::renderNextBlock(
 	const unsigned long tmpLoopStart = loopStart, tmpLoopEnd = loopEnd;
 	const double tmpSampleEnd = (double)sampleEnd;
 	double tmpSourceSamplePosition = sourceSamplePosition;
-	//SFZLowpass tmpLowpass = lowpass;
+	SFZLowpass tmpLowpass = lowpass;
 
 	float tmpSampleRate, tmpInitialFilterFc, tmpModLfoToFilterFc, tmpModEnvToFilterFc;
 	if (dynamicLowpass)
@@ -275,6 +276,7 @@ void SFZVoice::renderNextBlock(
 	else
 		noteGain = Decibels::decibelsToGain(noteGainDB);
 
+    int outBufferPos = 0;
 	while (numSamples) {
 		int blockSamples = (numSamples > SFZVOICE_RENDER_EFFECTSAMPLEBLOCK ? SFZVOICE_RENDER_EFFECTSAMPLEBLOCK : numSamples);
 		numSamples -= blockSamples;
@@ -282,7 +284,11 @@ void SFZVoice::renderNextBlock(
 		if (dynamicLowpass) {
 			float fres = tmpInitialFilterFc + modlfo.level * tmpModLfoToFilterFc + modeg.level * tmpModEnvToFilterFc;
 			tmpLowpass.active = (fres <= 13500);
-			if (tmpLowpass.active) tmpLowpass.setup(SFZRegion::cents2Hertz(fres) / tmpSampleRate);
+			if (tmpLowpass.active)
+            {
+                tmpLowpass.setup(SFZRegion::cents2Hertz(fres) / tmpSampleRate);
+                filter.state->setCutOffFrequency (44100, SFZRegion::cents2Hertz(fres), 5.0);
+            }
 			}
 
 		if (dynamicPitchRatio)
@@ -304,11 +310,7 @@ void SFZVoice::renderNextBlock(
 		if (updateVibLFO)
 			viblfo.process(blockSamples);
 
-        if (tmpLowpass.active)
-        {
-        dsp::AudioBlock<float> block (buffer, 0);
-        filter.process (ProcessContextReplacing<float> (block));
-        }
+        int sampsThisTime = 0;
 		while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEnd) {
 			unsigned long pos = (int)tmpSourceSamplePosition, nextPos = pos + 1;
 			float alpha = (float)(tmpSourceSamplePosition - pos), invAlpha = 1.0f - alpha;
@@ -351,9 +353,19 @@ void SFZVoice::renderNextBlock(
 				tmpSourceSamplePosition = tmpLoopStart;
 				numLoops += 1;
 				}
-
+            ++sampsThisTime;
 			}
 
+        if (tmpLowpass.active)
+        {
+            float *outs[2];
+            outs[0] = outL - sampsThisTime;
+            outs[1] = outR - sampsThisTime;
+            dsp::AudioBlock<float> block (outs, 2, sampsThisTime);
+            filter.process (juce::dsp::ProcessContextReplacing<float> (block));
+        }
+        outBufferPos += sampsThisTime;
+        
 		if (tmpSourceSamplePosition >= tmpSampleEnd || ampeg.isDone()) {
 			killNote();
 			break;
