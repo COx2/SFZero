@@ -57,9 +57,6 @@ class JUCE_API SFZVoice : public juce::SynthesiserVoice {
 		void	calcPitchRatio();
 		void	killNote();
 
-    juce::dsp::ProcessorDuplicator<juce::dsp::StateVariableFilter::Filter<float>,
-    juce::dsp::StateVariableFilter::Parameters<float>> filter;
-    
 		// Low-pass filter.
 		struct SFZLowpass {
 			void setup(float Fc);

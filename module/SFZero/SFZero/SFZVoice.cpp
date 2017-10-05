@@ -61,9 +61,6 @@ SFZVoice::SFZVoice()
 {
 	ampeg.setExponentialDecay(true);
 	modeg.setExponentialDecay(false);
-    
-    filter.state = new StateVariableFilter::Parameters<float>;
-    filter.prepare ({ 44100, (uint32) SFZVOICE_RENDER_EFFECTSAMPLEBLOCK, 2 });
 }
 
 
@@ -156,14 +153,11 @@ void SFZVoice::startNote(
 		&region->modeg, midiNoteNumber, floatVelocity, getSampleRate(), NULL);
 
 	// Setup lowpass filter.
-//    float filterQDB = region->initialFilterQ / 10.0f;
-//    lowpass.QInv = 1.0 / pow(10.0, (filterQDB / 20.0));
-//    lowpass.Z1Left = lowpass.Z2Left = lowpass.Z1Right = lowpass.Z2Right = 0;
-//    lowpass.active = (region->initialFilterFc <= 13500);
-//    if (lowpass.active) lowpass.setup(SFZRegion::cents2Hertz((float)region->initialFilterFc) / getSampleRate());
-    
-    filter.state->type = Type::lowPass;
-    filter.state->setCutOffFrequency (sampleRate, cutoff, resonance);
+	float filterQDB = region->initialFilterQ / 10.0f;
+	lowpass.QInv = 1.0 / pow(10.0, (filterQDB / 20.0));
+	lowpass.Z1Left = lowpass.Z2Left = lowpass.Z1Right = lowpass.Z2Right = 0;
+	lowpass.active = (region->initialFilterFc <= 13500);
+	if (lowpass.active) lowpass.setup(SFZRegion::cents2Hertz((float)region->initialFilterFc) / getSampleRate());
 
 	// Setup LFO filters.
 	modlfo.setup(region->delayModLFO, region->freqModLFO, getSampleRate());
@@ -254,13 +248,11 @@ void SFZVoice::renderNextBlock(
 	const unsigned long tmpLoopStart = loopStart, tmpLoopEnd = loopEnd;
 	const double tmpSampleEnd = (double)sampleEnd;
 	double tmpSourceSamplePosition = sourceSamplePosition;
-	//SFZLowpass tmpLowpass = lowpass;
+	SFZLowpass tmpLowpass = lowpass;
 
 	float tmpSampleRate, tmpInitialFilterFc, tmpModLfoToFilterFc, tmpModEnvToFilterFc;
 	if (dynamicLowpass)
-    {
 		tmpSampleRate = getSampleRate(), tmpInitialFilterFc = (float)region->initialFilterFc, tmpModLfoToFilterFc = (float)region->modLfoToFilterFc, tmpModEnvToFilterFc = (float)region->modEnvToFilterFc;
-    }
 
 	double pitchRatio;
 	float tmpModLfoToPitch, tmpVibLfoToPitch, tmpModEnvToPitch;
@@ -304,11 +296,6 @@ void SFZVoice::renderNextBlock(
 		if (updateVibLFO)
 			viblfo.process(blockSamples);
 
-        if (tmpLowpass.active)
-        {
-        dsp::AudioBlock<float> block (buffer, 0);
-        filter.process (ProcessContextReplacing<float> (block));
-        }
 		while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEnd) {
 			unsigned long pos = (int)tmpSourceSamplePosition, nextPos = pos + 1;
 			float alpha = (float)(tmpSourceSamplePosition - pos), invAlpha = 1.0f - alpha;
@@ -318,18 +305,15 @@ void SFZVoice::renderNextBlock(
 			// Simple linear interpolation.
 			float l = (inL[pos] * invAlpha + inL[nextPos] * alpha);
 
-//            //low pass filter
-//            if (tmpLowpass.active)
-//            {
-//
-//                //l = tmpLowpass.process(l, tmpLowpass.Z1Left, tmpLowpass.Z2Left);
-//            }
+			//low pass filter
+			if (tmpLowpass.active)
+				l = tmpLowpass.process(l, tmpLowpass.Z1Left, tmpLowpass.Z2Left);
 
 			float r;
 			if (inR) {
 				r = (inR[pos] * invAlpha + inR[nextPos] * alpha);
-//                if (tmpLowpass.active)
-//                    r = tmpLowpass.process(r, tmpLowpass.Z1Right, tmpLowpass.Z2Right);
+				if (tmpLowpass.active)
+					r = tmpLowpass.process(r, tmpLowpass.Z1Right, tmpLowpass.Z2Right);
 				}
 			else
 				r = l;
