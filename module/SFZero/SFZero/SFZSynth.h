@@ -17,6 +17,7 @@ class SFZSynth : public juce::Synthesiser {
 
 		int	numVoicesUsed();
 		juce::String   	voiceInfoString();
+        SFZSound*   getSound();
 
 	protected:
 		unsigned char	noteVelocities[128];
